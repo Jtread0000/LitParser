@@ -1,0 +1,41 @@
+# Literature database (source of truth). One record per source.
+# Generate the views: python3 scripts/lit.py   ·   Schema: docs/method.md
+# Replace these examples with your own sources.
+
+- id: example-arxiv-preprint
+  status: to-review          # to-review | reviewing | reviewed
+  used: false                # true once cited in your document
+  source_type: PP            # PR peer-reviewed | PP preprint | GL gray lit
+  load_bearing: false        # the ⭐ — carries the logic chain
+  section: 1
+  tags: [example, delegation]
+  shortlist_rank: null
+  title: An Example Open-Access Preprint
+  url: https://arxiv.org/abs/2501.00001
+  summary: One to three sentences on the key insight.
+  citation: {year: 2025, source: arXiv (preprint), arxiv_id: 2501.00001}
+  apa: ""
+  citation_status: needs-verification
+  where_used: ""
+  pdf: ""                    # set by the fetcher (Dropbox path), or your own stored PDF
+  md: ""                     # Lit/md/<id>.md once converted
+  notes: ""
+
+- id: example-personal-pdf
+  status: reviewed
+  used: false
+  source_type: PR
+  load_bearing: false
+  section: 2
+  tags: [example, personal]
+  shortlist_rank: null
+  title: A Paper You Already Have Stored
+  url: ""
+  summary: A source you dropped into Dropbox yourself; LitParser converts it too.
+  citation: {year: 2024, source: Journal Name, doi: 10.0000/example}
+  apa: ""
+  citation_status: needs-verification
+  where_used: ""
+  pdf: /YourDropbox/_Lit/pdfs/2024-example-personal-pdf.pdf
+  md: ""
+  notes: Point `pdf` at a file you already stored; pdf_to_md.py will convert it.

@@ -1,0 +1,75 @@
+name: Fetch OA PDFs + build database
+
+# Fetches open-access PDFs (arXiv + Unpaywall) to Dropbox, converts every PDF
+# (fetched or personally stored) to Markdown, and regenerates the views. Records
+# that already have a pdf: are skipped, so re-runs only do new work.
+#
+# SETUP (docs/method.md): repository secrets DROPBOX_APP_KEY, DROPBOX_APP_SECRET,
+# DROPBOX_REFRESH_TOKEN; variables DROPBOX_DEST_DIR and UNPAYWALL_EMAIL. Inert
+# until the secrets exist.
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Re-fetch all records even if pdf: is set"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - "scripts/fetch_pdfs.py"
+      - ".github/workflows/fetch-pdfs.yml"
+
+concurrency:
+  group: fetch-pdfs
+  cancel-in-progress: true
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch, convert, regenerate
+        env:
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+          DROPBOX_DEST_DIR: ${{ vars.DROPBOX_DEST_DIR }}
+          UNPAYWALL_EMAIL: ${{ vars.UNPAYWALL_EMAIL }}
+          FORCE: ${{ github.event.inputs.force }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DROPBOX_REFRESH_TOKEN:-}" ] || [ -z "${DROPBOX_APP_KEY:-}" ] || [ -z "${DROPBOX_APP_SECRET:-}" ]; then
+            echo "::warning title=Fetch skipped::Dropbox secrets not set; nothing fetched."
+            exit 0
+          fi
+          pip install --quiet pyyaml pymupdf4llm
+          DEST_DIR="${DROPBOX_DEST_DIR:-/_Lit}"
+          PDF_FOLDER="${DEST_DIR%/}/_Lit/pdfs"
+          LOCAL="/tmp/litpdfs"
+          FORCE_FLAG=""; [ "${FORCE:-false}" = "true" ] && FORCE_FLAG="--force"
+
+          python3 scripts/dropbox_rename_pdfs.py
+          python3 scripts/fetch_pdfs.py --target "${LOCAL}" --update-yaml \
+            --pdf-prefix "${PDF_FOLDER}" ${FORCE_FLAG}
+          python3 scripts/dropbox_upload_dir.py "${LOCAL}" "${PDF_FOLDER}" || true
+          python3 scripts/pdf_to_md.py
+          python3 scripts/add_pdf_links.py
+          python3 scripts/lit.py
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Lit/lit.yaml Lit/reading-list.md Lit/references.md Lit/references-table.md Lit/md
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Fetch OA PDFs + rebuild database"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi

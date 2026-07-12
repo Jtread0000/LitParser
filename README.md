@@ -1,0 +1,49 @@
+# LitParser
+
+**Build a citation-honest literature database from publicly available sources and
+your own stored PDFs — converted to Markdown, tracked in git, verifiable.**
+
+One YAML file is the source of truth. Human-readable views — a **status table**, an
+**APA reference list**, and a **reading list** — are generated from it, and a
+validator refuses to mark a source *cited* without a *verified* citation. Two ingest
+paths: fetch **open-access** PDFs (arXiv + Unpaywall), or point at PDFs you already
+have stored. Each PDF is converted **once** to Markdown so sources are cheap to read
+and to verify quotes against.
+
+Built as a reusable [Claude Code skill](SKILL.md). Pairs optionally with
+[GitDoc](https://github.com/Jtread0000/GitDoc) — see [docs/gitdoc-tie-in.md](docs/gitdoc-tie-in.md).
+
+## Why
+- **Verifiable** — the validator gates `used: true` on a filled, verified APA, so
+  nothing reaches your paper uncited; each source keeps its full text for quote checks.
+- **Legal by design** — open-access retrieval only; never library proxies or paywalled
+  full text.
+- **Cheap to read** — PDFs (bulky, image-processed) are converted once to lean,
+  greppable Markdown with a link back to the source.
+- **Portable** — plain YAML + a few scripts; no database server.
+
+## Quickstart
+```bash
+pip install -r requirements.txt
+python3 scripts/lit.py            # validate the example DB + generate the views
+cat Lit/references-table.md       # author · year · title · cited? · where · citation status
+```
+Then replace the examples in `Lit/lit.yaml` with your sources.
+
+## The loop
+1. Add sources to `Lit/lit.yaml` (or seed from a references list with `seed_lit_from_md.py`).
+2. Open-access → `python3 scripts/fetch_pdfs.py`; already-stored → set the record's `pdf` path.
+3. `python3 scripts/pdf_to_md.py` → `Lit/md/<id>.md`; `add_pdf_links.py` adds the source link.
+4. Cite it: `used: true`, verified `apa`, `citation_status: verified`, `where_used`.
+5. `python3 scripts/lit.py` regenerates the views.
+
+Full method + schema: [docs/method.md](docs/method.md). Dropbox setup (offline
+refresh token + secrets) is documented there too.
+
+## What's inside
+`scripts/` (the toolkit), `Lit/` (your database + generated views + `md/`),
+`.github/workflows/fetch-pdfs.yml` (fetch → convert → regenerate → commit),
+`docs/` (method + GitDoc tie-in).
+
+## License
+MIT — see [LICENSE](LICENSE).

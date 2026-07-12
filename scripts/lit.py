@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+"""Generate the human-readable views from Lit/lit.yaml (the source of truth).
+
+  python3 scripts/lit.py            # validate + regenerate views
+  python3 scripts/lit.py --check    # validate only (nonzero exit on problems)
+
+Outputs:
+  Lit/reading-list.md   grouped by status, for scanning what to read next
+  Lit/references.md     only used==true, APA-formatted, for the paper's reference list
+"""
+import re
+import sys
+import yaml
+
+DB = "Lit/lit.yaml"
+READING = "Lit/reading-list.md"
+REFERENCES = "Lit/references.md"
+TABLE = "Lit/references-table.md"
+
+STATUSES = ["to-review", "reviewing", "reviewed"]
+TYPE_LABEL = {"PR": "peer-reviewed", "PP": "preprint", "GL": "gray lit"}
+
+
+def load():
+    return yaml.safe_load(open(DB, encoding="utf-8")) or []
+
+
+def validate(records):
+    problems = []
+    ids = set()
+    for i, r in enumerate(records):
+        rid = r.get("id", f"<record {i}>")
+        if not r.get("id"):
+            problems.append(f"record {i}: missing id")
+        if rid in ids:
+            problems.append(f"{rid}: duplicate id")
+        ids.add(rid)
+        if r.get("status") not in STATUSES:
+            problems.append(f"{rid}: status must be one of {STATUSES}")
+        if not isinstance(r.get("used"), bool):
+            problems.append(f"{rid}: used must be true/false")
+        if r.get("used") and not r.get("apa"):
+            problems.append(f"{rid}: used=true but apa is empty (add the citation before citing)")
+        if r.get("used") and r.get("citation_status") == "needs-verification":
+            problems.append(f"{rid}: used=true but citation_status is still needs-verification")
+    return problems
+
+
+def badge(r):
+    bits = [TYPE_LABEL.get(r.get("source_type"), r.get("source_type") or "?")]
+    if r.get("load_bearing"):
+        bits.append("load-bearing")
+    if r.get("shortlist_rank"):
+        bits.append(f"read-first #{r['shortlist_rank']}")
+    return ", ".join(bits)
+
+
+def write_reading_list(records):
+    lines = ["# Reading list", "",
+             "Generated from `lit.yaml` by `scripts/lit.py` — do not edit by hand.", ""]
+    total = len(records)
+    used = sum(1 for r in records if r.get("used"))
+    counts = {s: sum(1 for r in records if r.get("status") == s) for s in STATUSES}
+    lines.append(f"**{total} sources** — "
+                 + ", ".join(f"{counts[s]} {s}" for s in STATUSES)
+                 + f"; {used} cited in the memo.")
+    lines.append("")
+    for s in STATUSES:
+        group = [r for r in records if r.get("status") == s]
+        if not group:
+            continue
+        # load-bearing and read-first float up
+        group.sort(key=lambda r: (r.get("shortlist_rank") or 99,
+                                   not r.get("load_bearing"), r.get("id")))
+        lines.append(f"## {s} ({len(group)})")
+        lines.append("")
+        for r in group:
+            cite = f" ({r['citation']['year']})" if r.get("citation", {}).get("year") else ""
+            mark = "✅" if r.get("used") else "•"
+            lines.append(f"- {mark} **{r['title']}**{cite} — _{badge(r)}_")
+            if r.get("summary"):
+                lines.append(f"  - {r['summary']}")
+            meta = []
+            if r.get("tags"):
+                meta.append("tags: " + ", ".join(r["tags"]))
+            if r.get("url"):
+                meta.append(f"[link]({r['url']})")
+            if r.get("pdf"):
+                meta.append(f"pdf: {r['pdf']}")
+            if meta:
+                lines.append(f"  - {' · '.join(meta)}")
+            lines.append(f"  - `id: {r['id']}`")
+        lines.append("")
+    open(READING, "w", encoding="utf-8").write("\n".join(lines).rstrip() + "\n")
+
+
+def write_references(records):
+    used = [r for r in records if r.get("used")]
+    lines = ["# References (used in the memo)", "",
+             "Generated from `lit.yaml` (records with `used: true`) by `scripts/lit.py`. "
+             "APA 7th. Paste into the memo's Citations section.", ""]
+    if not used:
+        lines.append("_No sources marked `used: true` yet._")
+    else:
+        for r in sorted(used, key=lambda r: (r.get("apa") or r.get("title") or "").lower()):
+            lines.append(f"- {r.get('apa') or '[[CITE: APA for ' + r['id'] + ']]'}")
+            if r.get("where_used"):
+                lines.append(f"  - used in: {r['where_used']}")
+    open(REFERENCES, "w", encoding="utf-8").write("\n".join(lines).rstrip() + "\n")
+
+
+def first_author(r):
+    """Short author label from the APA string (e.g. 'Nyilasy et al.', 'Kleve &
+    Barons', 'Malatji'). Falls back to '—' when no citation is captured yet."""
+    apa = r.get("apa") or ""
+    if not apa:
+        return "—"
+    authors = apa.split("(")[0].strip()
+    n = len(re.findall(r"[^\s,]+,\s+[A-Z]\.", authors)) or 1  # count "Surname, X." groups
+    s1 = authors.split(",")[0].strip()                        # first surname (allows spaces)
+    if n == 1:
+        return s1
+    if n == 2:
+        s2 = authors.split("&")[-1].strip().split(",")[0].strip()
+        return f"{s1} & {s2}"
+    return f"{s1} et al."
+
+
+def cite_state(r):
+    if not r.get("used"):
+        return "—"
+    if r.get("citation_status") == "verified" and r.get("apa"):
+        return "✅ in place"
+    return "⚠ unverified"
+
+
+def _row(r):
+    year = (r.get("citation") or {}).get("year") or "—"
+    title = (r.get("title") or "").replace("|", "\\|")
+    inpaper = "✅ yes" if r.get("used") else "—"
+    where = (r.get("where_used") or "—").replace("|", "\\|") if r.get("used") else "—"
+    return f"| {first_author(r)} | {year} | {title} | {inpaper} | {where} | {cite_state(r)} |"
+
+
+def write_table(records):
+    used = [r for r in records if r.get("used")]
+    unused = [r for r in records if not r.get("used")]
+    head = "| Author | Year | Title | In paper? | Where used | Citation |\n" \
+           "| --- | --- | --- | --- | --- | --- |"
+    lines = ["# References — status table", "",
+             "Generated from `lit.yaml` by `scripts/lit.py` — do not edit by hand. "
+             "The database schema and workflow (how to build one) live with the reusable "
+             "GitDoc skill; this view is the *actual* sources for this memo and their status.", "",
+             f"**{len(records)} sources** — {len(used)} cited in the memo, {len(unused)} not yet cited.", ""]
+    lines += [f"## Cited in the memo ({len(used)})", ""]
+    if used:
+        lines.append(head)
+        for r in sorted(used, key=lambda r: (r.get("where_used") or "", first_author(r).lower())):
+            lines.append(_row(r))
+    else:
+        lines.append("_None cited yet._")
+    lines += ["", f"## Not yet cited ({len(unused)})", ""]
+    if unused:
+        lines.append(head)
+        for r in sorted(unused, key=lambda r: (-((r.get("citation") or {}).get("year") or 0),
+                                               (r.get("title") or "").lower())):
+            lines.append(_row(r))
+    else:
+        lines.append("_All sources are cited._")
+    open(TABLE, "w", encoding="utf-8").write("\n".join(lines).rstrip() + "\n")
+
+
+def main():
+    records = load()
+    problems = validate(records)
+    if problems:
+        print("Validation problems:")
+        for p in problems:
+            print(f"  - {p}")
+        if "--check" in sys.argv:
+            sys.exit(1)
+    elif "--check" in sys.argv:
+        print(f"OK: {len(records)} records, no problems.")
+        return
+    write_reading_list(records)
+    write_references(records)
+    write_table(records)
+    used = sum(1 for r in records if r.get("used"))
+    print(f"Regenerated views: {len(records)} sources, {used} used. "
+          f"Wrote {READING}, {REFERENCES}, {TABLE}.")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+# PDFs live in Dropbox, not git (keeps the repo lean); their Markdown IS tracked.
+Lit/pdfs/
+*.pdf

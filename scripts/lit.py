@@ -8,14 +8,20 @@ Outputs:
   Lit/reading-list.md   grouped by status, for scanning what to read next
   Lit/references.md     only used==true, APA-formatted, for the paper's reference list
 """
+import posixpath
 import re
 import sys
+import urllib.parse
+
 import yaml
 
 DB = "Lit/lit.yaml"
 READING = "Lit/reading-list.md"
 REFERENCES = "Lit/references.md"
 TABLE = "Lit/references-table.md"
+README = "README.md"
+PROC_START = "<!-- lit:processed-files:start -->"
+PROC_END = "<!-- lit:processed-files:end -->"
 
 STATUSES = ["to-review", "reviewing", "reviewed"]
 TYPE_LABEL = {"PR": "peer-reviewed", "PP": "preprint", "GL": "gray lit"}
@@ -170,6 +176,49 @@ def write_table(records):
     open(TABLE, "w", encoding="utf-8").write("\n".join(lines).rstrip() + "\n")
 
 
+def _pdf_link(pdf):
+    """Dropbox "open this file" web link, identical to the block pdf_to_md.py
+    writes into each Lit/md/<id>.md (no shared link is created)."""
+    folder = posixpath.dirname(pdf)
+    fn = posixpath.basename(pdf)
+    url = f"https://www.dropbox.com/home{folder}?preview={urllib.parse.quote(fn)}"
+    return fn, url
+
+
+def write_readme_processed(records):
+    """Refresh the generated 'Processed files' table in README.md, in place,
+    between the PROC_START/PROC_END markers. No-op (returns False) when the repo
+    has no README or the markers aren't present — so the untouched template and
+    any hand-written README are left completely alone."""
+    try:
+        text = open(README, encoding="utf-8").read()
+    except FileNotFoundError:
+        return False
+    if PROC_START not in text or PROC_END not in text:
+        return False
+
+    done = [r for r in records if r.get("pdf") and r.get("md")]
+    body = []
+    if done:
+        body.append("| Source | Title | Source PDF | Markdown |")
+        body.append("| --- | --- | --- | --- |")
+        for r in sorted(done, key=lambda r: (r.get("title") or r["id"]).lower()):
+            title = (r.get("title") or "").replace("|", "\\|")
+            fn, url = _pdf_link(r["pdf"])
+            md = r["md"]
+            body.append(f"| `{r['id']}` | {title} | [{fn}]({url}) | [`{md}`]({md}) |")
+    else:
+        body.append("_No processed sources yet — add PDFs and run the pipeline "
+                    "(`pdf_to_md.py` → `add_pdf_links.py`), then `python3 scripts/lit.py`._")
+
+    block = PROC_START + "\n" + "\n".join(body) + "\n" + PROC_END
+    new = re.sub(re.escape(PROC_START) + r".*?" + re.escape(PROC_END),
+                 lambda _m: block, text, count=1, flags=re.S)
+    if new != text:
+        open(README, "w", encoding="utf-8").write(new)
+    return True
+
+
 def main():
     records = load()
     problems = validate(records)
@@ -185,9 +234,13 @@ def main():
     write_reading_list(records)
     write_references(records)
     write_table(records)
+    readme = write_readme_processed(records)
     used = sum(1 for r in records if r.get("used"))
+    processed = sum(1 for r in records if r.get("pdf") and r.get("md"))
     print(f"Regenerated views: {len(records)} sources, {used} used. "
           f"Wrote {READING}, {REFERENCES}, {TABLE}.")
+    if readme:
+        print(f"Updated {README}: {processed} processed file(s) listed.")
 
 
 if __name__ == "__main__":

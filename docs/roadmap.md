@@ -1,9 +1,11 @@
 # Roadmap / notes
 
-Planned enhancements to the LitParser template. Not yet implemented — captured
-here so the intent isn't lost.
+Enhancements to the LitParser template.
 
-## Generated "Processed files" list in the repo README
+## Generated "Processed files" list in the repo README  ✅ done
+
+**Implemented** in `scripts/lit.py` (`write_readme_processed`). The section below
+records the original design; it now works as specified.
 
 **Goal:** when LitParser is cloned as a template and then populated, the **new
 repo's `README.md`** should carry an auto-generated list of the files that have

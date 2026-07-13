@@ -43,7 +43,7 @@ refresh token + secrets) is documented there too.
 ## What's inside
 `scripts/` (the toolkit), `Lit/` (your database + generated views + `md/`),
 `.github/workflows/fetch-pdfs.yml` (fetch → convert → regenerate → commit),
-`docs/` (method + GitDoc tie-in).
+`docs/` (method + GitDoc tie-in + [roadmap](docs/roadmap.md)).
 
 ## License
 MIT — see [LICENSE](LICENSE).

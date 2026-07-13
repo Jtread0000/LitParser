@@ -122,8 +122,8 @@ def main():
             time.sleep(0.3)
 
     if changed:
-        header = ("# Literature database for the Cyber-AI Autonomy study.\n"
-                  "# Schema and workflow: see Lit/README.md. Regenerate views: python3 scripts/lit.py\n\n")
+        header = ("# Literature database (source of truth).\n"
+                  "# Schema and workflow: see docs/method.md. Regenerate views: python3 scripts/lit.py\n\n")
         with open(DB, "w", encoding="utf-8") as f:
             f.write(header)
             yaml.safe_dump(records, f, sort_keys=False, allow_unicode=True, width=100)

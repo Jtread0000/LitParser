@@ -78,3 +78,12 @@ Dropbox (not git); their Markdown is git-tracked.
 - PDFs: **`<year>-<id>.pdf`** — apply to any future gathering so folders sort by year.
 - Every record starts `citation_status: needs-verification`; verify against the
   actual paper before `used: true`. Style defaults to APA 7th.
+
+## Provenance & reuse
+
+This repo is the **canonical source** of the toolkit in `scripts/`. Projects that
+build a literature database typically **vendor** these scripts (keep an in-repo
+copy so the project runs standalone) rather than depend on this repo at runtime.
+If you do that, record the LitParser commit you copied from — e.g. a
+`scripts/VENDOR.txt` holding `LitParser@<commit-sha>` — so a later reader knows
+where the canonical version lives and how to pull fixes forward.

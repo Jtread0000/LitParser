@@ -2,7 +2,7 @@
 
 Generated from `lit.yaml` by `scripts/lit.py` — do not edit by hand.
 
-**2 sources** — 1 to-review, 0 reviewing, 1 reviewed; 0 cited in the memo.
+**2 sources** — 1 to-review, 0 reviewing, 1 reviewed; 0 cited.
 
 ## to-review (1)
 

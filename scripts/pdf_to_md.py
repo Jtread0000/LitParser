@@ -9,7 +9,7 @@ under Lit/md/ (git-tracked), and record `md:` in lit.yaml.
 Runs in the cloud Action (downloads via the Dropbox token). It also runs locally
 if the token env vars are set. For complex 2-column journal PDFs where this
 extractor garbles the layout, regenerate that one .md with pdf2md-claude on the
-Mac (see Lit/README.md).
+Mac (see docs/method.md).
 
 Env: DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN
 """
@@ -123,8 +123,8 @@ def main():
         converted += 1
         print(f"  md   {rec['id']} ({len(md)//1000}k chars) -> {md_path}")
 
-    header = ("# Literature database for the Cyber-AI Autonomy study.\n"
-              "# Schema and workflow: see Lit/README.md. Regenerate views: python3 scripts/lit.py\n\n")
+    header = ("# Literature database (source of truth).\n"
+              "# Schema and workflow: see docs/method.md. Regenerate views: python3 scripts/lit.py\n\n")
     with open(DB, "w", encoding="utf-8") as f:
         f.write(header)
         yaml.safe_dump(records, f, sort_keys=False, allow_unicode=True, width=100)

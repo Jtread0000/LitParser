@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
-"""Parse Lit/cyber-treatise-references.md into the structured Lit/lit.yaml database.
+"""Seed a structured Lit/lit.yaml database from a plain Markdown references list.
+
+Usage: python3 scripts/seed_lit_from_md.py [SRC.md] [OUT.yaml]
+       (defaults: Lit/references-seed.md -> Lit/lit.yaml)
 
 One-time seeding. After this, edit lit.yaml directly (or via Claude) and run
 scripts/lit.py to regenerate the Markdown views.
+
+NOTE: the section-tag map and shortlist heuristics below are example values
+carried over from the project this tool was extracted from — adapt them (or
+remove them) to fit your own reference list.
 """
 import re
 import sys
 import yaml
 
-SRC = "Lit/cyber-treatise-references.md"
-OUT = "Lit/lit.yaml"
+SRC = sys.argv[1] if len(sys.argv) > 1 else "Lit/references-seed.md"
+OUT = sys.argv[2] if len(sys.argv) > 2 else "Lit/lit.yaml"
 
 SECTION_TAGS = {
     "0": ["method", "expert-elicitation"],
@@ -115,9 +122,9 @@ def parse():
 
 def main():
     records = parse()
-    header = ("# Literature database for the Cyber-AI Autonomy study.\n"
-              "# Schema and workflow: see Lit/README.md. Regenerate views: python3 scripts/lit.py\n"
-              "# status: to-review | reviewing | reviewed   used: true once cited in the memo\n\n")
+    header = ("# Literature database (source of truth).\n"
+              "# Schema and workflow: see docs/method.md. Regenerate views: python3 scripts/lit.py\n"
+              "# status: to-review | reviewing | reviewed   used: true once cited\n\n")
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(header)
         yaml.safe_dump(records, f, sort_keys=False, allow_unicode=True, width=100)

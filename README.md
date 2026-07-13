@@ -41,7 +41,8 @@ Full method + schema: [docs/method.md](docs/method.md). Dropbox setup (offline
 refresh token + secrets) is documented there too.
 
 ## What's inside
-`scripts/` (the toolkit), `Lit/` (your database + generated views + `md/`),
+`scripts/` (the toolkit), `Lit/` (your database + generated views + `md/`; the
+committed views are **example output** — replace `Lit/lit.yaml` and rerun `lit.py`),
 `.github/workflows/fetch-pdfs.yml` (fetch → convert → regenerate → commit),
 `docs/` (method + GitDoc tie-in + [roadmap](docs/roadmap.md)).
 

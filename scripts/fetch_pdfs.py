@@ -36,7 +36,7 @@ import urllib.request
 import yaml
 
 DB = "Lit/lit.yaml"
-UA = "Cyber-AI-Autonomy-lit/1.0 (academic reference collection; contact via UNPAYWALL_EMAIL)"
+UA = "LitParser/1.0 (academic reference collection; contact via UNPAYWALL_EMAIL)"
 
 
 def get(url, timeout=45):
@@ -106,7 +106,7 @@ def resolve(rec, email):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--target", default="Lit/pdfs")
-    ap.add_argument("--email", default=os.environ.get("UNPAYWALL_EMAIL", "jtread0000@gmail.com"))
+    ap.add_argument("--email", default=os.environ.get("UNPAYWALL_EMAIL", "you@example.com"))
     ap.add_argument("--update-yaml", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--limit", type=int, default=0)
@@ -168,8 +168,8 @@ def main():
         time.sleep(1.0)   # be polite
 
     if args.update_yaml and not args.dry_run:
-        header = ("# Literature database for the Cyber-AI Autonomy study.\n"
-                  "# Schema and workflow: see Lit/README.md. Regenerate views: python3 scripts/lit.py\n\n")
+        header = ("# Literature database (source of truth).\n"
+                  "# Schema and workflow: see docs/method.md. Regenerate views: python3 scripts/lit.py\n\n")
         with open(DB, "w", encoding="utf-8") as f:
             f.write(header)
             yaml.safe_dump(records, f, sort_keys=False, allow_unicode=True, width=100)

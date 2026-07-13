@@ -1,10 +1,10 @@
 # References — status table
 
-Generated from `lit.yaml` by `scripts/lit.py` — do not edit by hand. The database schema and workflow (how to build one) live with the reusable GitDoc skill; this view is the *actual* sources for this memo and their status.
+Generated from `lit.yaml` by `scripts/lit.py` — do not edit by hand. The database schema and workflow (how to build one) live in `docs/method.md`; this view is your sources and their citation status.
 
-**2 sources** — 0 cited in the memo, 2 not yet cited.
+**2 sources** — 0 cited, 2 not yet cited.
 
-## Cited in the memo (0)
+## Cited (0)
 
 _None cited yet._
 

@@ -49,3 +49,13 @@ no-op, so this stays invisible until a repo is actually populated.
 **Acceptance:** after `python3 scripts/lit.py` on a populated clone, `README.md`
 lists every processed source with a working link to its source PDF, matching the
 link style used in `Lit/md/<id>.md`.
+
+## Known limitations
+
+- **`scripts/seed_lit_from_md.py` carries example heuristics.** The section-tag
+  map and the shortlist keyword ranks are values carried over from the project
+  LitParser was extracted from. They run harmlessly but won't be meaningful for
+  your reference list — adapt or delete them. The seeder reads
+  `Lit/references-seed.md` by default (override with a path argument). A fully
+  generic seeder (format-agnostic, no baked-in tags) is a possible future
+  improvement.

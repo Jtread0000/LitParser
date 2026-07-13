@@ -63,7 +63,7 @@ def write_reading_list(records):
     counts = {s: sum(1 for r in records if r.get("status") == s) for s in STATUSES}
     lines.append(f"**{total} sources** — "
                  + ", ".join(f"{counts[s]} {s}" for s in STATUSES)
-                 + f"; {used} cited in the memo.")
+                 + f"; {used} cited.")
     lines.append("")
     for s in STATUSES:
         group = [r for r in records if r.get("status") == s]
@@ -96,9 +96,9 @@ def write_reading_list(records):
 
 def write_references(records):
     used = [r for r in records if r.get("used")]
-    lines = ["# References (used in the memo)", "",
+    lines = ["# References (cited sources)", "",
              "Generated from `lit.yaml` (records with `used: true`) by `scripts/lit.py`. "
-             "APA 7th. Paste into the memo's Citations section.", ""]
+             "APA 7th. Paste into your document's references section.", ""]
     if not used:
         lines.append("_No sources marked `used: true` yet._")
     else:
@@ -149,10 +149,10 @@ def write_table(records):
            "| --- | --- | --- | --- | --- | --- |"
     lines = ["# References — status table", "",
              "Generated from `lit.yaml` by `scripts/lit.py` — do not edit by hand. "
-             "The database schema and workflow (how to build one) live with the reusable "
-             "GitDoc skill; this view is the *actual* sources for this memo and their status.", "",
-             f"**{len(records)} sources** — {len(used)} cited in the memo, {len(unused)} not yet cited.", ""]
-    lines += [f"## Cited in the memo ({len(used)})", ""]
+             "The database schema and workflow (how to build one) live in `docs/method.md`; "
+             "this view is your sources and their citation status.", "",
+             f"**{len(records)} sources** — {len(used)} cited, {len(unused)} not yet cited.", ""]
+    lines += [f"## Cited ({len(used)})", ""]
     if used:
         lines.append(head)
         for r in sorted(used, key=lambda r: (r.get("where_used") or "", first_author(r).lower())):

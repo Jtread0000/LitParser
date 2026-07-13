@@ -3,7 +3,7 @@
 
 Used by the fetch-pdfs workflow to push downloaded open-access PDFs into
 Dropbox. Self-contained (own token exchange) so it doesn't couple to the
-memo-sync script.
+sync script.
 
 Usage: python3 scripts/dropbox_upload_dir.py <local_dir> <dropbox_folder>
 Env:   DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN
